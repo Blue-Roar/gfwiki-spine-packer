@@ -4,7 +4,7 @@
 // @version      1.0
 // @description  打包下载少前百科 GFWiki / IOP Wiki 上的战术人形骨骼数据
 // @author       BrightSu
-// @license      gpl-3.0
+// @license      mit
 // @match        *://gfwiki.org/*
 // @match        *://iopwiki.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=iopwiki.com
