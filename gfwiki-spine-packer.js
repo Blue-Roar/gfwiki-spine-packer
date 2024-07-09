@@ -49,7 +49,7 @@ function urlToPromise(url) {
     });
 }
 
-function packSpine(tdollId = $('#enemyChibiAnimation').attr('data-tdoll-id'), tdollCostume = $('#enemyChibiAnimation').attr('data-tdoll-costume')) {
+function packSpine(tdollId = $('#TDollChibiAnimation').attr('data-tdoll-id'), tdollCostume = $('#TDollChibiAnimation').attr('data-tdoll-costume')) {
     let costumeId = tdollId+tdollCostume;
     let files = getChibiFiles(costumeId);
     
