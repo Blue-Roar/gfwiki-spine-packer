@@ -3,7 +3,7 @@ $('head').append('<script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/
 $('head').append('<script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/jszip/3.2.2/jszip.min.js" type="application/javascript" crossorigin="anonymous"></script>');
 $('head').append('<script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/jszip-utils/0.1.0/jszip-utils.min.js" type="application/javascript" crossorigin="anonymous"></script>');
 $('head').append('<script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/FileSaver.js/1.3.8/FileSaver.min.js" type="application/javascript" crossorigin="anonymous"></script>');
-$('.chibiAnimationSelect.chibiButton').after('<button onclick="packSpine()" style="width:135px;height:24px;background-color:#222;color:#eaeaea;border-radius:5px;cursor:pointer;">下载当前皮肤</button>');
+$('.gf-droplist.chibi-costume-switcher').after('<button onclick="packSpine()" style="width:135px;height:24px;background-color:#222;color:#eaeaea;border-radius:5px;cursor:pointer;">下载当前皮肤</button>');
 
 let cpp = window.gfUtils.createWikiPathPart;
 let filesLoaded = false;
@@ -20,7 +20,7 @@ function getChibiFiles(costumeId) {
     filesLoaded = false;
     for (let i=tryFiles.length-1;i>=0;i--) {
         let fileName = tryFiles[i];
-        let fileUrl = 'https://gfwiki.org/images/' + cpp(fileName) + fileName;
+        let fileUrl = 'https://iopwiki.com/images/' + cpp(fileName) + fileName;
         $.ajax({
             url:fileUrl,
             type:'HEAD',
@@ -64,7 +64,7 @@ function packSpine(tdollId = $('#enemyChibiAnimation').attr('data-tdoll-id'), td
             
             $.each(files, function(index, value) {
                 let fileName = value; //files[index];
-                let fileUrl = 'https://gfwiki.org/images/' + cpp(fileName) + fileName;
+                let fileUrl = 'https://iopwiki.com/images/' + cpp(fileName) + fileName;
                 fileName = fileName.replace('_chibi','');
                 fileName = fileName.replace('_spritemap.png','.png');
                 fileName = fileName.replace('_skel.skel','.skel');
@@ -85,6 +85,8 @@ function packSpine(tdollId = $('#enemyChibiAnimation').attr('data-tdoll-id'), td
                 }
             });
             
+            if (tdollCostume) zip.file("注意.txt", "IOP Wiki 的战术人形皮肤名称命名为"+tdollCostume+"，目前脚本并不支持修改。请手动查看"+costumeId+".atlas内的具体ID并修改文件名", {compression: "DEFLATE", compressionOptions: {level: 9}});
+
             zip.generateAsync({type:"blob", compression: "DEFLATE", compressionOptions: {level: 9}}).then(function(content) {
                 saveAs(content, costumeId + ".zip");
             });
