@@ -1,13 +1,34 @@
+// ==UserScript==
+// @name         少前百科 GFWiki 战术人形骨骼数据打包下载
+// @namespace    https://github.com/Blue-Roar/gfwiki-spine-packer
+// @version      1.0
+// @description  打包下载少前百科 GFWiki / IOP Wiki 上的战术人形骨骼数据
+// @author       BrightSu
+// @license      gpl-3.0
+// @match        *://gfwiki.org/*
+// @match        *://iopwiki.com/*
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=iopwiki.com
+// @grant        none
+// @run-at       document-idle
+// @require      https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/jquery/3.6.0/jquery.min.js
+// @require      https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/jszip/3.2.2/jszip.min.js
+// @require      https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/jszip-utils/0.1.0/jszip-utils.min.js
+// @require      https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/FileSaver.js/1.3.8/FileSaver.min.js
+// @unwrap
+// ==/UserScript==
+
 // 引用必要的库
 $('head').append('<script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/jquery/3.6.0/jquery.min.js" crossorigin="anonymous"></script>');
 $('head').append('<script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/jszip/3.2.2/jszip.min.js" type="application/javascript" crossorigin="anonymous"></script>');
 $('head').append('<script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/jszip-utils/0.1.0/jszip-utils.min.js" type="application/javascript" crossorigin="anonymous"></script>');
 $('head').append('<script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/FileSaver.js/1.3.8/FileSaver.min.js" type="application/javascript" crossorigin="anonymous"></script>');
-$('.chibiAnimationSelect.chibiButton').after('<button onclick="packSpine()" style="width:135px;height:24px;background-color:#222;color:#eaeaea;border-radius:5px;cursor:pointer;">下载当前皮肤</button>');
 
-let cpp = window.gfUtils.createWikiPathPart;
-let filesLoaded = false;
+if (window.location.host == "iopwiki.com") $('.gf-droplist.chibi-costume-switcher').after('<button onclick="packSpine()" style="width:135px;height:24px;background-color:#222;color:#eaeaea;border-radius:5px;cursor:pointer;">下载当前皮肤</button>');
+if (window.location.host == "gfwiki.org") $('.chibiAnimationSelect.chibiButton').after('<button onclick="packSpine()" style="width:135px;height:24px;background-color:#222;color:#eaeaea;border-radius:5px;cursor:pointer;">下载当前皮肤</button>');
+
+var filesLoaded = false;
 function getChibiFiles(costumeId) {
+    let cpp = window.gfUtils.createWikiPathPart;
     let tryFiles = [
         (costumeId + "_chibi_spritemap.png"),
         (costumeId + "_chibi_skel.skel"),
@@ -20,7 +41,7 @@ function getChibiFiles(costumeId) {
     filesLoaded = false;
     for (let i=tryFiles.length-1;i>=0;i--) {
         let fileName = tryFiles[i];
-        let fileUrl = 'https://gfwiki.org/images/' + cpp(fileName) + fileName;
+        let fileUrl = '/images/' + cpp(fileName) + fileName;
         $.ajax({
             url:fileUrl,
             type:'HEAD',
@@ -49,7 +70,16 @@ function urlToPromise(url) {
     });
 }
 
-function packSpine(tdollId = $('#TDollChibiAnimation').attr('data-tdoll-id'), tdollCostume = $('#TDollChibiAnimation').attr('data-tdoll-costume')) {
+function packSpine(tdollId = null, tdollCostume = null) {
+    if (window.location.host == "iopwiki.com") {
+        if (!tdollId) tdollId = $('#enemyChibiAnimation').attr('data-tdoll-id');
+        if (!tdollCostume) tdollCostume = $('#enemyChibiAnimation').attr('data-tdoll-costume');
+    } else if (window.location.host == "gfwiki.org") {
+        if (!tdollId) tdollId = $('#TDollChibiAnimation').attr('data-tdoll-id');
+        if (!tdollCostume) tdollCostume = $('#TDollChibiAnimation').attr('data-tdoll-costume');
+    }
+
+    let cpp = window.gfUtils.createWikiPathPart;
     let costumeId = tdollId+tdollCostume;
     let files = getChibiFiles(costumeId);
     
@@ -64,7 +94,7 @@ function packSpine(tdollId = $('#TDollChibiAnimation').attr('data-tdoll-id'), td
             
             $.each(files, function(index, value) {
                 let fileName = value; //files[index];
-                let fileUrl = 'https://gfwiki.org/images/' + cpp(fileName) + fileName;
+                let fileUrl = '/images/' + cpp(fileName) + fileName;
                 fileName = fileName.replace('_chibi','');
                 fileName = fileName.replace('_spritemap.png','.png');
                 fileName = fileName.replace('_skel.skel','.skel');
@@ -75,7 +105,6 @@ function packSpine(tdollId = $('#TDollChibiAnimation').attr('data-tdoll-id'), td
                 }
                 costumeId = costumeId.toLowerCase();
                 fileName = fileName.toLowerCase();
-                console.log(costumeId,fileUrl);
                 let fileExtension = fileName.substring(fileName.lastIndexOf('.') + 1);
                 if (fileExtension == "atlas") {
                     var promise = $.get(fileUrl);
@@ -85,6 +114,8 @@ function packSpine(tdollId = $('#TDollChibiAnimation').attr('data-tdoll-id'), td
                 }
             });
             
+            if (window.location.host == "iopwiki.com") zip.file("注意.txt", "IOP Wiki 的战术人形数据文件名与原始文件名往往不一致，并且此脚本当前并不支持修改。请手动查看"+costumeId+".atlas内的具体ID并修改文件名", {compression: "DEFLATE", compressionOptions: {level: 9}});
+
             zip.generateAsync({type:"blob", compression: "DEFLATE", compressionOptions: {level: 9}}).then(function(content) {
                 saveAs(content, costumeId + ".zip");
             });
