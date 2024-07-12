@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         少前百科 GFWiki 战术人形骨骼数据打包下载
 // @namespace    https://github.com/Blue-Roar/gfwiki-spine-packer
-// @version      1.0
+// @version      1.1
 // @description  打包下载少前百科 GFWiki / IOP Wiki 上的战术人形骨骼数据
 // @author       BrightSu
 // @license      mit
@@ -72,53 +72,65 @@ function urlToPromise(url) {
 
 function packSpine(tdollId = null, tdollCostume = null) {
     if (window.location.host == "iopwiki.com") {
-        if (!tdollId) tdollId = $('#enemyChibiAnimation').attr('data-tdoll-id');
-        if (!tdollCostume) tdollCostume = $('#enemyChibiAnimation').attr('data-tdoll-costume');
+        if (tdollId==null) tdollId = $('#enemyChibiAnimation').attr('data-tdoll-id');
+        if (tdollCostume==null) tdollCostume = $('#enemyChibiAnimation').attr('data-tdoll-costume');
     } else if (window.location.host == "gfwiki.org") {
-        if (!tdollId) tdollId = $('#TDollChibiAnimation').attr('data-tdoll-id');
-        if (!tdollCostume) tdollCostume = $('#TDollChibiAnimation').attr('data-tdoll-costume');
+        if (tdollId==null) tdollId = $('#TDollChibiAnimation').attr('data-tdoll-id');
+        if (tdollCostume==null) tdollCostume = $('#TDollChibiAnimation').attr('data-tdoll-costume');
     }
+    if (!tdollId) tdollId = "";
+    if (!tdollCostume) tdollCostume = "";
 
-    let cpp = window.gfUtils.createWikiPathPart;
-    let costumeId = tdollId+tdollCostume;
-    let files = getChibiFiles(costumeId);
+    if (tdollId) {
+        let cpp = window.gfUtils.createWikiPathPart;
+        let costumeId = tdollId+tdollCostume;
+        let files = getChibiFiles(costumeId);
+        
+        // “异步”（然而并没能实现）
+        // 总之是为了检查文件列表是否获取完毕
+        let checkTimer = setTimeout(function() {
+            if (filesLoaded) {
+                if (files.length >= 3) {
+                    clearTimeout(checkTimer);
+                    console.log("文件：",files);
+                    let zip = new JSZip();
+                    let spine = zip.folder(costumeId);
+                    
+                    $.each(files, function(index, value) {
+                        let fileName = value; //files[index];
+                        let fileUrl = '/images/' + cpp(fileName) + fileName;
+                        fileName = fileName.replace('_chibi','');
+                        fileName = fileName.replace('_spritemap.png','.png');
+                        fileName = fileName.replace('_skel.skel','.skel');
+                        fileName = fileName.replace('_atlas.txt','.atlas');
+                        if (fileName.includes('_dorm')) {
+                            fileName = fileName.replace('_dorm','');
+                            fileName = 'R'+fileName;
+                        }
+                        costumeId = costumeId;
+                        fileName = fileName;
+                        let fileExtension = fileName.substring(fileName.lastIndexOf('.') + 1);
+                        if (fileExtension == "atlas") {
+                            var promise = $.get(fileUrl);
+                            spine.file(fileName, promise, {compression: "DEFLATE", compressionOptions: {level: 9}});
+                        } else {
+                            spine.file(fileName, urlToPromise(fileUrl), {binary:true});
+                        }
+                    });
+                    
+                    if (window.location.host == "iopwiki.com") zip.file("注意.txt", "IOP Wiki 的战术人形数据文件名与原始文件名往往不一致，并且此脚本当前并不支持修改。请手动查看"+costumeId+".atlas内的具体ID并修改文件名", {compression: "DEFLATE", compressionOptions: {level: 9}});
     
-    // “异步”（然而并没能实现）
-    // 总之是为了检查文件列表是否获取完毕
-    let checkTimer = setTimeout(function() {
-        if (filesLoaded) {
-            clearTimeout(checkTimer);
-            console.log("文件：",files);
-            let zip = new JSZip();
-            let spine = zip.folder(costumeId.toLowerCase());
-            
-            $.each(files, function(index, value) {
-                let fileName = value; //files[index];
-                let fileUrl = '/images/' + cpp(fileName) + fileName;
-                fileName = fileName.replace('_chibi','');
-                fileName = fileName.replace('_spritemap.png','.png');
-                fileName = fileName.replace('_skel.skel','.skel');
-                fileName = fileName.replace('_atlas.txt','.atlas');
-                if (fileName.includes('_dorm')) {
-                    fileName = fileName.replace('_dorm','');
-                    fileName = 'r'+fileName;
-                }
-                costumeId = costumeId.toLowerCase();
-                fileName = fileName.toLowerCase();
-                let fileExtension = fileName.substring(fileName.lastIndexOf('.') + 1);
-                if (fileExtension == "atlas") {
-                    var promise = $.get(fileUrl);
-                    spine.file(fileName, promise, {compression: "DEFLATE", compressionOptions: {level: 9}});
+                    zip.generateAsync({type:"blob", compression: "DEFLATE", compressionOptions: {level: 9}}).then(function(content) {
+                        saveAs(content, costumeId + ".zip");
+                    });
+                } else if (files.length > 0) {
+                    alert("下载失败：数据文件不完整。\n请检查网络连接状态以及战术人形名称与皮肤ID ("+costumeId+")");
                 } else {
-                    spine.file(fileName, urlToPromise(fileUrl), {binary:true});
+                    alert("下载失败：无返回结果。\n请检查战术人形名称与皮肤ID ("+costumeId+")");
                 }
-            });
-            
-            if (window.location.host == "iopwiki.com") zip.file("注意.txt", "IOP Wiki 的战术人形数据文件名与原始文件名往往不一致，并且此脚本当前并不支持修改。请手动查看"+costumeId+".atlas内的具体ID并修改文件名", {compression: "DEFLATE", compressionOptions: {level: 9}});
-
-            zip.generateAsync({type:"blob", compression: "DEFLATE", compressionOptions: {level: 9}}).then(function(content) {
-                saveAs(content, costumeId + ".zip");
-            });
-        }
-    }, 1000);
+            }
+        }, 1000);
+    } else {
+        alert("战术人形名称不能为空");
+    }
 }
