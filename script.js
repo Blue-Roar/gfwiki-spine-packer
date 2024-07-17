@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         少前百科 GFWiki 战术人形骨骼数据打包下载
 // @namespace    https://github.com/Blue-Roar/gfwiki-spine-packer
-// @version      1.1
+// @version      1.2
 // @description  打包下载少前百科 GFWiki / IOP Wiki 上的战术人形骨骼数据
 // @author       BrightSu
 // @license      mit
@@ -23,8 +23,41 @@ $('head').append('<script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/
 $('head').append('<script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/jszip-utils/0.1.0/jszip-utils.min.js" type="application/javascript" crossorigin="anonymous"></script>');
 $('head').append('<script src="https://lf3-cdn-tos.bytecdntp.com/cdn/expire-1-M/FileSaver.js/1.3.8/FileSaver.min.js" type="application/javascript" crossorigin="anonymous"></script>');
 
-if (window.location.host == "iopwiki.com") $('.gf-droplist.chibi-costume-switcher').after('<button onclick="packSpine()" style="width:135px;height:24px;background-color:#222;color:#eaeaea;border-radius:5px;cursor:pointer;">下载当前皮肤</button>');
-if (window.location.host == "gfwiki.org") $('.chibiAnimationSelect.chibiButton').after('<button onclick="packSpine()" style="width:135px;height:24px;background-color:#222;color:#eaeaea;border-radius:5px;cursor:pointer;">下载当前皮肤</button>');
+var attachTimer = setTimeout("appendButton()", 1000);
+appendButton();
+function appendButton() {
+    console.log('等待页面加载...');
+    attachTimer = setTimeout("appendButton()", 1000);
+    if ($('#packSpine').length>0) {
+        clearTimeout(attachTimer);
+        console.log('已附加下载按钮');
+    } else {
+        if (window.location.host == "iopwiki.com") {
+            if ($('.gf-droplist.chibi-costume-switcher').length>0) {
+                $('.gf-droplist.chibi-costume-switcher').after('<button id="packSpine" onclick="packSpine()" style="width:135px;height:24px;background-color:#222;color:#eaeaea;border-radius:5px;cursor:pointer;">下载当前皮肤</button>');
+            } else {
+                $('#p-tb-list').append('<li id="packSpine"><a href="javascript:packSpinePromt()">下载皮肤...</a></li>');
+            }
+        }
+        if (window.location.host == "gfwiki.org") {
+            if ($('.gf-droplist.chibi-costume-switcher').length>0) {
+                $('.chibiAnimationSelect.chibiButton').after('<button id="packSpine" onclick="packSpine()" style="width:135px;height:24px;background-color:#222;color:#eaeaea;border-radius:5px;cursor:pointer;">下载当前皮肤</button>');
+            } else {
+                $('#MSToolbox').append('<li id="packSpine" class="mw-list-item"><a href="javascript:packSpinePromt()"><span>下载皮肤...</span></a></li>');
+            }
+        }
+    }
+}
+
+function packSpinePromt() {
+    let tdollId = prompt("请输入战术人形ID，注意区分大小写：", "");
+    let tdollCostume = prompt("请输入战术人形皮肤编号，以下划线开始：", "");
+    if (tdollId != null) {
+        packSpine(tdollId, tdollCostume);
+    } else {
+        alert("已取消");
+    }
+}
 
 var filesLoaded = false;
 function getChibiFiles(costumeId) {
